@@ -35,6 +35,7 @@ var incImageSize = document.querySelector('.upload-resize-controls-button-inc');
 var imageSize = document.querySelector('.effect-image-preview');
 var effectControls = document.querySelector('.upload-effect-controls');
 var uploadSelectImageForm = document.querySelector('#upload-select-image');
+var uploadFormDescription = document.querySelector('.upload-form-description');
 
 var getRandomBoolean = function () {
   return Math.random() >= 0.5;
@@ -137,24 +138,14 @@ var onPicPreviewEnterPress = function (event) {
   }
 };
 
-var pictures = getPicturesData(PHOTOS_SUM);
-var picturesGrid = createPicturesGrid(pictures);
-document.querySelector('.pictures').appendChild(picturesGrid);
-document.querySelector('.upload-overlay').classList.add('hidden');
-// picturePage.classList.remove('hidden');
-// fillPicturePage(pictures[0]);
-var createdPicPreviews = document.querySelectorAll('.picture');
-for (var i = 0; i < createdPicPreviews.length; i++) {
-  createdPicPreviews[i].setAttribute('tabindex', 0);
-  createdPicPreviews[i].addEventListener('click', onPicPreviewClick);
-  createdPicPreviews[i].addEventListener('keydown', onPicPreviewEnterPress);
-}
-
 var openCropFrom = function () {
   cropFormPage.classList.remove('hidden');
+  uploadForm.classList.add('hidden');
   cropFormCancel.addEventListener('click', onCropFormCancel);
   document.addEventListener('keydown', onCropFormEscPress);
   cropFormCancel.addEventListener('keydown', onCloseCropFormEnterPress);
+  uploadFormDescription.addEventListener('focus', checkDescriptionFocus);
+  uploadFormDescription.addEventListener('blur', checkDescriptionFocus);
 };
 var closeCropForm = function () {
   cropFormPage.classList.add('hidden');
@@ -162,10 +153,18 @@ var closeCropForm = function () {
   cropFormCancel.removeEventListener('click', onCropFormCancel);
   document.removeEventListener('keydown', onCropFormEscPress);
   cropFormCancel.removeEventListener('keydown', onCloseCropFormEnterPress);
+  uploadFormDescription.removeEventListener('focus', checkDescriptionFocus);
+  uploadFormDescription.removeEventListener('blur', checkDescriptionFocus);
 };
 
-var onUploadFile = function () {
-  uploadForm.classList.add('hidden');
+
+var checkDescriptionFocus = function () {
+  descriptionIsFocused = descriptionIsFocused ? descriptionIsFocused = false : descriptionIsFocused = true;
+  return descriptionIsFocused;
+};
+
+var onUploadFile = function (event) {
+  event.target.value = '';
   openCropFrom();
 };
 var onCropFormCancel = function () {
@@ -173,7 +172,9 @@ var onCropFormCancel = function () {
 };
 var onCropFormEscPress = function (event) {
   if (event.keyCode === ESC_KEYCODE) {
-    closeCropForm();
+    if (!descriptionIsFocused) {
+      closeCropForm();
+    }
   }
 };
 var onCloseCropFormEnterPress = function (event) {
@@ -221,6 +222,14 @@ var checkTags = function () {
   }
   checkNumberSign();
 };
+var checkUnicTags = function (tagsList, j) {
+  for (var i = 0; i < tagsList.length; i++) {
+    if (tagsList[i] === tagsList[j] && i !== j) {
+      formTags.setCustomValidity('Теги не должны повторяться');
+      break;
+    }
+  }
+};
 var checkNumberSign = function () {
   var tagsList = formTags.value.match(/\#[a-zA-Zа-яА-Я0-9\-]+/g);
   if (tagsList === null) {
@@ -233,6 +242,9 @@ var checkNumberSign = function () {
       if (tagsList[i].length > MAX_TAG_LENGTH) {
         formTags.setCustomValidity('Максимум 20 символов в одном теге');
         return;
+      }
+      if (tagsList.length > 1) {
+        checkUnicTags(tagsList, i);
       }
     }
   }
@@ -254,7 +266,28 @@ var onSubmitForm = function (event) {
   }
 };
 
+var onFormSubmit = function () {
+  resizeValue.value = 100 + '%';
+  currentEffect = null;
+  formTags.value = '';
+  uploadFormDescription.value = '';
+};
 
+
+var pictures = getPicturesData(PHOTOS_SUM);
+var picturesGrid = createPicturesGrid(pictures);
+document.querySelector('.pictures').appendChild(picturesGrid);
+document.querySelector('.upload-overlay').classList.add('hidden');
+// picturePage.classList.remove('hidden');
+// fillPicturePage(pictures[0]);
+var createdPicPreviews = document.querySelectorAll('.picture');
+for (var i = 0; i < createdPicPreviews.length; i++) {
+  createdPicPreviews[i].setAttribute('tabindex', 0);
+  createdPicPreviews[i].addEventListener('click', onPicPreviewClick);
+  createdPicPreviews[i].addEventListener('keydown', onPicPreviewEnterPress);
+}
+
+var descriptionIsFocused = false;
 uploadFile.addEventListener('change', onUploadFile);
 cropFormCancel.style.left = '90%'; // подвинул, чтобы кнопка влезала в экран
 setFormComments();
@@ -276,3 +309,5 @@ setFormSubmit();
 formComments.styleBorderOrigin = formComments.style.border;
 formTags.styleBorderOrigin = formTags.style.border;
 buttonSubmit.addEventListener('click', onSubmitForm);
+
+uploadSelectImageForm.addEventListener('submit', onFormSubmit);
