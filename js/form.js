@@ -7,6 +7,7 @@ window.form = (function () {
   var MAX_TAGS = 5;
   var MAX_TAG_LENGTH = 21;
   var MAX_COMMENTS_LENGTH = 100;
+  var EFFECT_DEFAULT = '20%';
 
   var uploadElem = document.querySelector('#upload-select-image');
   var cropFormPage = document.querySelector('.upload-overlay');
@@ -16,16 +17,21 @@ window.form = (function () {
   var effectControls = document.querySelector('.upload-effect-controls');
   var uploadFormDescription = document.querySelector('.upload-form-description');
   var formTags = document.querySelector('.upload-form-hashtags');
-  var buttonSubmit = document.querySelector('#upload-submit');
+  var formSubmit = document.querySelector('#upload-submit');
   var formComments = document.querySelector('.upload-form-description');
   var resizeValue = document.querySelector('.upload-resize-controls-value');
   var decImageSize = document.querySelector('.upload-resize-controls-button-dec');
   var incImageSize = document.querySelector('.upload-resize-controls-button-inc');
   var imageSize = document.querySelector('.effect-image-preview');
   var uploadSelectImageForm = document.querySelector('#upload-select-image');
+  var formEffectPin = document.querySelector('.upload-effect-level-pin');
+  var formSliderLine = document.querySelector('.upload-effect-level-line');
+  var formSliderLineVal = document.querySelector('.upload-effect-level-val');
+  var formSlider = document.querySelector('.upload-effect-level');
 
   formComments.styleBorderOrigin = formComments.style.border;
   formTags.styleBorderOrigin = formTags.style.border;
+
 
   // Открытие/закрытие модуля
 
@@ -99,12 +105,61 @@ window.form = (function () {
   };
 
 
-  // Изменение фильтра
+  // Проверка и изменение эффекта
 
+  var checkEffects = function () {
+    if (imageSize.classList.contains('effect-none')) {
+      formSlider.classList.add('hidden');
+    } else {
+      formSlider.classList.remove('hidden');
+      formSliderLineVal.style.width = EFFECT_DEFAULT;
+      formEffectPin.style.left = EFFECT_DEFAULT;
+    }
+  };
+  var switchEffect = function (filter) {
+    imageSize.classList.remove('effect-none');
+    units = '';
+    k = 1;
+    switch (filter) {
+      case 'chrome':
+        selectedEffect = 'grayscale';
+        break;
+      case 'sepia':
+        selectedEffect = 'sepia';
+        break;
+      case 'marvin':
+        selectedEffect = 'invert';
+        break;
+      case 'phobos':
+        selectedEffect = 'blur';
+        units = 'px';
+        k = 3;
+        break;
+      case 'heat':
+        selectedEffect = 'brightness';
+        k = 3;
+        break;
+    }
+
+    // Иначе выставляем по-умолчанию
+    imageSize.style.filter = 'none';
+    formSliderLineVal.style.width = EFFECT_DEFAULT;
+  };
+  var resetEffects = function () {
+    imageSize.classList.add('effect-none');
+    checkEffects();
+  };
+  // var setEffectValue = function (left) {
+  //   var filterValue = Math.round(left * sliderWidth * k) / 100;
+  //   imageSize.style.filter = selectedEffect + '(' + filterValue + units + ')';
+  // };
   var changeImageEffect = function (effect) {
     imageSize.classList.remove(currentEffect);
     currentEffect = 'effect-' + effect.value;
     imageSize.classList.add(currentEffect);
+    checkEffects();
+    switchEffect(effect.value);
+    // setEffectValue(EFFECT_DEFAULT);
   };
 
 
@@ -136,6 +191,7 @@ window.form = (function () {
     currentEffect = null;
     formTags.value = '';
     uploadFormDescription.value = '';
+    resetEffects(); // не работает
   };
 
 
@@ -190,12 +246,55 @@ window.form = (function () {
       turnFormToError(formTags);
     }
   };
+  var onChangePin = function (event) {
+    event.preventDefault();
+
+    var startX = event.clientX;
+    var defaultLeft = formEffectPin.offsetLeft;
+    var sliderWidth = formSliderLine.offsetWidth;
+
+    var onMouseMove = function (moveEvent) {
+      moveEvent.preventDefault();
+
+      var newX = moveEvent.clientX;
+      var newLeft = defaultLeft + (newX - startX);
+
+      // Пин за рамками
+      if (newLeft < 0) {
+        newLeft = 0;
+      }
+      if (newLeft > sliderWidth) {
+        newLeft = sliderWidth;
+      }
+
+      var filterValue = Math.round(newLeft / sliderWidth * k * 100) / 100;
+      imageSize.style.filter = selectedEffect + '(' + filterValue + units + ')';
+      // setEffectValue(newLeft);
+
+      formEffectPin.style.left = newLeft + 'px';
+      formSliderLineVal.style.width = newLeft + 'px';
+    };
+
+    var onMouseUp = function (upEvt) {
+      upEvt.preventDefault();
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+  };
 
 
   // Программа
 
   var descriptionIsFocused = false;
   var currentEffect = null;
+  var selectedEffect = 'none';
+  var units = '';
+  var k = 1;
+  resetEffects();
 
   document.querySelector('.upload-overlay').classList.add('hidden');
   cropFormCancel.style.left = '90%'; // подвинул, чтобы кнопка влезала в экран
@@ -207,8 +306,7 @@ window.form = (function () {
   effectControls.addEventListener('click', onEffectControlsClick);
   formTags.addEventListener('input', checkTags);
   formComments.addEventListener('input', checkComments);
-  buttonSubmit.addEventListener('click', onSubmitForm);
-  // uploadSelectImageForm.addEventListener('submit', onFormSubmit);
+  formSubmit.addEventListener('click', onSubmitForm);
 
   resizeValue.value = 100 + '%';
   decImageSize.addEventListener('click', function () {
@@ -217,5 +315,7 @@ window.form = (function () {
   incImageSize.addEventListener('click', function () {
     changeImageSize(1);
   });
+
+  formEffectPin.addEventListener('mousedown', onChangePin);
 
 })();
