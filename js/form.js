@@ -29,6 +29,9 @@ window.form = (function () {
   var formSliderLineVal = document.querySelector('.upload-effect-level-val');
   var formSlider = document.querySelector('.upload-effect-level');
 
+  var sliderWidth = formSliderLine.offsetWidth; // Почему не доступно?
+  var LINE_WIDTH = 470;
+
   formComments.styleBorderOrigin = formComments.style.border;
   formTags.styleBorderOrigin = formTags.style.border;
 
@@ -117,28 +120,40 @@ window.form = (function () {
     }
   };
   var switchEffect = function (filter) {
-    imageSize.classList.remove('effect-none');
-    units = '';
-    k = 1;
-    switch (filter) {
-      case 'chrome':
-        selectedEffect = 'grayscale';
-        break;
-      case 'sepia':
-        selectedEffect = 'sepia';
-        break;
-      case 'marvin':
-        selectedEffect = 'invert';
-        break;
-      case 'phobos':
-        selectedEffect = 'blur';
-        units = 'px';
-        k = 3;
-        break;
-      case 'heat':
-        selectedEffect = 'brightness';
-        k = 3;
-        break;
+    if (filter === 'none') {
+      formSlider.classList.add('hidden');
+    } else {
+      imageSize.classList.remove('effect-none');
+      formSlider.classList.remove('hidden');
+      formSliderLineVal.style.width = EFFECT_DEFAULT;
+      formEffectPin.style.left = EFFECT_DEFAULT;
+      units = '';
+      k = 1;
+      switch (filter) {
+        case 'chrome':
+          selectedEffect = 'grayscale';
+          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
+          break;
+        case 'sepia':
+          selectedEffect = 'sepia';
+          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
+          break;
+        case 'marvin':
+          selectedEffect = 'invert';
+          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
+          break;
+        case 'phobos':
+          selectedEffect = 'blur';
+          units = 'px';
+          k = 3;
+          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
+          break;
+        case 'heat':
+          selectedEffect = 'brightness';
+          k = 3;
+          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
+          break;
+      }
     }
 
     // Иначе выставляем по-умолчанию
@@ -149,17 +164,15 @@ window.form = (function () {
     imageSize.classList.add('effect-none');
     checkEffects();
   };
-  // var setEffectValue = function (left) {
-  //   var filterValue = Math.round(left * sliderWidth * k) / 100;
-  //   imageSize.style.filter = selectedEffect + '(' + filterValue + units + ')';
-  // };
   var changeImageEffect = function (effect) {
     imageSize.classList.remove(currentEffect);
     currentEffect = 'effect-' + effect.value;
     imageSize.classList.add(currentEffect);
-    checkEffects();
     switchEffect(effect.value);
-    // setEffectValue(EFFECT_DEFAULT);
+  };
+  var setEffectValue = function (left, width) {
+    var filterValue = Math.round(left / width * k * 100) / 100;
+    imageSize.style.filter = selectedEffect + '(' + filterValue + units + ')';
   };
 
 
@@ -251,7 +264,7 @@ window.form = (function () {
 
     var startX = event.clientX;
     var defaultLeft = formEffectPin.offsetLeft;
-    var sliderWidth = formSliderLine.offsetWidth;
+    sliderWidth = formSliderLine.offsetWidth;
 
     var onMouseMove = function (moveEvent) {
       moveEvent.preventDefault();
@@ -267,16 +280,14 @@ window.form = (function () {
         newLeft = sliderWidth;
       }
 
-      var filterValue = Math.round(newLeft / sliderWidth * k * 100) / 100;
-      imageSize.style.filter = selectedEffect + '(' + filterValue + units + ')';
-      // setEffectValue(newLeft);
+      setEffectValue(newLeft, sliderWidth);
 
       formEffectPin.style.left = newLeft + 'px';
       formSliderLineVal.style.width = newLeft + 'px';
     };
 
-    var onMouseUp = function (upEvt) {
-      upEvt.preventDefault();
+    var onMouseUp = function (upEvent) {
+      upEvent.preventDefault();
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
