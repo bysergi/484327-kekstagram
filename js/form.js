@@ -1,13 +1,13 @@
 'use strict';
 
 window.form = (function () {
-  var STEP = 25;
-  var MIN_SIZE = 25;
-  var MAX_SIZE = 100;
   var MAX_TAGS = 5;
   var MAX_TAG_LENGTH = 21;
   var MAX_COMMENTS_LENGTH = 100;
   var EFFECT_DEFAULT = '20%';
+  var STEP = 25;
+  var MIN_SIZE = 25;
+  var MAX_SIZE = 100;
 
   var uploadElem = document.querySelector('#upload-select-image');
   var cropFormPage = document.querySelector('.upload-overlay');
@@ -132,26 +132,21 @@ window.form = (function () {
       switch (filter) {
         case 'chrome':
           selectedEffect = 'grayscale';
-          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
           break;
         case 'sepia':
           selectedEffect = 'sepia';
-          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
           break;
         case 'marvin':
           selectedEffect = 'invert';
-          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
           break;
         case 'phobos':
           selectedEffect = 'blur';
           units = 'px';
           k = 3;
-          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
           break;
         case 'heat':
           selectedEffect = 'brightness';
           k = 3;
-          setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
           break;
       }
     }
@@ -169,21 +164,12 @@ window.form = (function () {
     currentEffect = 'effect-' + effect.value;
     imageSize.classList.add(currentEffect);
     switchEffect(effect.value);
+    setEffectValue(formEffectPin.offsetLeft, LINE_WIDTH);
+    // setEffectValue(formEffectPin.offsetLeft, sliderWidth); // sliderWidth определяется после того, как применил эффект
   };
   var setEffectValue = function (left, width) {
     var filterValue = Math.round(left / width * k * 100) / 100;
     imageSize.style.filter = selectedEffect + '(' + filterValue + units + ')';
-  };
-
-
-  // Изменение размера
-
-  var changeImageSize = function (direction) {
-    var newSize = parseInt(resizeValue.value, 10) + STEP * direction;
-    if (newSize >= MIN_SIZE && newSize <= MAX_SIZE) {
-      resizeValue.value = newSize + '%';
-      imageSize.style.transform = 'scale(' + newSize / 100 + ')';
-    }
   };
 
 
@@ -204,7 +190,7 @@ window.form = (function () {
     currentEffect = null;
     formTags.value = '';
     uploadFormDescription.value = '';
-    resetEffects(); // не работает
+    resetEffects();
   };
 
 
@@ -243,12 +229,6 @@ window.form = (function () {
   var onCloseCropFormEnterPress = function (event) {
     if (event.keyCode === window.utils.KEY_CODES.ENTER) {
       closeCropForm();
-    }
-  };
-  var onEffectControlsClick = function () {
-    var target = event.target;
-    if (target.tagName.toLowerCase() === 'input') {
-      changeImageEffect(target);
     }
   };
   var onSubmitForm = function (event) {
@@ -298,6 +278,17 @@ window.form = (function () {
   };
 
 
+  // Изменение
+
+  var adjustScale = function (element, direction) {
+    var newSize = parseInt(element.value, 10) + STEP * direction;
+    if (newSize >= MIN_SIZE && newSize <= MAX_SIZE) {
+      element.value = newSize + '%';
+      document.querySelector('.effect-image-preview').style.transform = 'scale(' + newSize / 100 + ')';
+    }
+  };
+
+
   // Программа
 
   var descriptionIsFocused = false;
@@ -314,18 +305,13 @@ window.form = (function () {
   setFormComments();
 
   uploadFile.addEventListener('change', onUploadFile);
-  effectControls.addEventListener('click', onEffectControlsClick);
   formTags.addEventListener('input', checkTags);
   formComments.addEventListener('input', checkComments);
   formSubmit.addEventListener('click', onSubmitForm);
 
   resizeValue.value = 100 + '%';
-  decImageSize.addEventListener('click', function () {
-    changeImageSize(-1);
-  });
-  incImageSize.addEventListener('click', function () {
-    changeImageSize(1);
-  });
+  window.initScale(resizeValue, adjustScale);
+  window.initFilters(changeImageEffect);
 
   formEffectPin.addEventListener('mousedown', onChangePin);
 
